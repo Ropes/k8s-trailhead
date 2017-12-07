@@ -46,7 +46,7 @@ func TestHelloKubecon(t *testing.T) {
 	for i, T := range tests {
 		t.Run(fmt.Sprintf("hello-deployment-test-%d", i), func(t *testing.T) {
 
-			d, err := HelloKubecon(T.image, T.tag, T.replicas)
+			d, err := kubeconDeployment(T.image, T.tag, T.replicas)
 			t.Logf("%#v", T)
 			if T.err && err == nil {
 				t.Errorf("an error was expected for: %#v", T)
@@ -62,6 +62,37 @@ func TestHelloKubecon(t *testing.T) {
 					t.Errorf("replica value unexpected: %#v", d.Spec)
 				}
 			}
+		})
+	}
+}
+
+func TestQuantity(t *testing.T) {
+	tests := []struct {
+		v float64
+		s string
+	}{
+		{
+			v: float64(2.5),
+			s: "2500m",
+		},
+		{
+			v: float64(2.0),
+			s: "2",
+		},
+		{
+			v: float64(0.5),
+			s: "500m",
+		},
+	}
+
+	for i, T := range tests {
+		t.Run(fmt.Sprintf("test-quantity-%d", i), func(t *testing.T) {
+			q := cpuQuantity(T.v)
+			qs := q.String()
+			if qs != T.s {
+				t.Errorf("quantity expected: %q, got %q", T.s, qs)
+			}
+
 		})
 	}
 }
