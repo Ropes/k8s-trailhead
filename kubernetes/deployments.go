@@ -30,6 +30,8 @@ func cpuQuantity(cpu float64) resource.Quantity {
 	return resource.MustParse(q)
 }
 
+// kubeconContainer returns a named v1.Container object with resources
+// limited to 0.5 CPU and scheduled with 0.2CPU.
 func kubeconContainer(name, image, tag string) v1.Container {
 	return v1.Container{
 		Name:            name,

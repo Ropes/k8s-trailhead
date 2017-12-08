@@ -169,9 +169,10 @@ func TestDeploymentMinikubeE2E(t *testing.T) {
 		t.Error(err)
 		t.Logf("%#v", d)
 	}
+	t.Logf("deployment struct created")
 
 	kcp := os.Getenv("HOME") + "/.kube/config"
-	// TODO: Create client to to minikube
+	// Create client to to minikube
 	config, err := clientcmd.NewNonInteractiveDeferredLoadingClientConfig(
 		&clientcmd.ClientConfigLoadingRules{ExplicitPath: kcp},
 		&clientcmd.ConfigOverrides{CurrentContext: "minikube"},
@@ -185,6 +186,7 @@ func TestDeploymentMinikubeE2E(t *testing.T) {
 	if err != nil {
 		t.Fatal("error creating client: %v", err)
 	}
+	t.Logf("clientset created")
 
 	// Create Minikube Deployment
 	d, err = clientset.AppsV1beta2().Deployments("default").Create(d)
@@ -193,6 +195,7 @@ func TestDeploymentMinikubeE2E(t *testing.T) {
 		t.Fatal("error creating deployment")
 	}
 	time.Sleep(1 * time.Second) // give some time for the API
+	t.Logf("deployment created by client")
 
 	// Verify Deployment exists
 	ds, err := clientset.AppsV1beta2().Deployments("default").List(metav1.ListOptions{LabelSelector: "app=api"})
@@ -200,25 +203,15 @@ func TestDeploymentMinikubeE2E(t *testing.T) {
 		t.Error(err)
 	}
 	if len(ds.Items) < 1 {
-		t.Errorf("error: deployments should not be 0")
+		t.Fatal("error: deployments should not be 0")
 	}
-	t.Logf("%#v", ds.Items[0])
 	time.Sleep(1 * time.Second) // give some time for the API
-
-	/*
-		// Assert services
-		svc, err := clientset.Core().Services("default").List(metav1.ListOptions{})
-		if err != nil {
-			t.Errorf("svc get err: %v", err)
-		}
-		if len(svc.Items) < 1 {
-			t.Errorf("at least one service expected")
-		}
-	*/
+	t.Logf("deployment exists!")
 
 	// Delete Deployment
 	err = clientset.AppsV1beta2().Deployments("default").Delete(helloKubeconDeploymentName, nil)
 	if err != nil {
 		t.Errorf("error deleting deployment: %v", err)
 	}
+	t.Logf("deployment deleted")
 }
