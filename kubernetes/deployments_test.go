@@ -11,6 +11,11 @@ import (
 	"k8s.io/client-go/tools/clientcmd"
 )
 
+var (
+	kubeconImg = "localhost:5000/kubecon"
+	kubeconTag = "1.0"
+)
+
 func TestHelloKubecon(t *testing.T) {
 	tests := []struct {
 		namespace string
@@ -94,13 +99,72 @@ func TestQuantity(t *testing.T) {
 	}
 }
 
-func TestDeploymentMinikubeE2E(t *testing.T) {
-	// TestMini
+func TestDeploymentCreateUpdateNoCleanup(t *testing.T) {
 	if _, ok := os.LookupEnv("TESTMINIKUBE"); !ok {
 		t.Skip("TESTMINIKUBE unset")
 	}
 	// Create Deployment
-	d, err := kubeconDeployment("localhost", "5000")
+	d, err := kubeconDeployment(kubeconImg, kubeconTag)
+	if err != nil || d == nil {
+		t.Error(err)
+		t.Logf("%#v", d)
+	}
+
+	kcp := os.Getenv("HOME") + "/.kube/config"
+	// Create client to to minikube
+	config, err := clientcmd.NewNonInteractiveDeferredLoadingClientConfig(
+		&clientcmd.ClientConfigLoadingRules{ExplicitPath: kcp},
+		&clientcmd.ConfigOverrides{CurrentContext: "minikube"},
+	).ClientConfig()
+	if err != nil {
+		t.Fatal("error reading config %#v: %v", config, err)
+	}
+
+	// creates the clientset
+	clientset, err := kubernetes.NewForConfig(config)
+	if err != nil {
+		t.Fatal("error creating client: %v", err)
+	}
+
+	// Check if deployment already exists
+	exists := false
+	ds, err := clientset.Extensions().Deployments("default").List(metav1.ListOptions{LabelSelector: "app=api"})
+	if err != nil {
+		t.Error(err)
+	}
+	if len(ds.Items) != 1 {
+		t.Errorf("error: deployments should be 1")
+	} else {
+		chkd := ds.Items[0]
+		if chkd.Name != helloKubeconDeploymentName {
+			t.Errorf("unexpected Deployment: %v", chkd.Name)
+		}
+	}
+
+	// Create/Update Minikube Deployment
+	if exists {
+		d, err = clientset.Extensions().Deployments("default").Update(d)
+		if err != nil {
+			t.Error(err)
+			t.Fatal("error creating deployment")
+		}
+	} else {
+		d, err = clientset.Extensions().Deployments("default").Create(d)
+		if err != nil {
+			t.Error(err)
+			t.Fatal("error creating deployment")
+		}
+	}
+	t.Logf("Deployment \n%#v", d)
+}
+
+func TestDeploymentMinikubeE2E(t *testing.T) {
+	// Test Minikube  Deployment
+	if _, ok := os.LookupEnv("TESTMINIKUBE"); !ok {
+		t.Skip("TESTMINIKUBE unset")
+	}
+	// Create Deployment
+	d, err := kubeconDeployment(kubeconImg, kubeconTag)
 	if err != nil || d == nil {
 		t.Error(err)
 		t.Logf("%#v", d)
