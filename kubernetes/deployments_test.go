@@ -128,7 +128,7 @@ func TestDeploymentCreateUpdateNoCleanup(t *testing.T) {
 
 	// Check if deployment already exists
 	exists := false
-	ds, err := clientset.Extensions().Deployments("default").List(metav1.ListOptions{LabelSelector: "app=api"})
+	ds, err := clientset.AppsV1beta2().Deployments("default").List(metav1.ListOptions{LabelSelector: "app=api"})
 	if err != nil {
 		t.Error(err)
 	}
@@ -143,13 +143,13 @@ func TestDeploymentCreateUpdateNoCleanup(t *testing.T) {
 
 	// Create/Update Minikube Deployment
 	if exists {
-		d, err = clientset.Extensions().Deployments("default").Update(d)
+		d, err = clientset.AppsV1beta2().Deployments("default").Update(d)
 		if err != nil {
 			t.Error(err)
 			t.Fatal("error creating deployment")
 		}
 	} else {
-		d, err = clientset.Extensions().Deployments("default").Create(d)
+		d, err = clientset.AppsV1beta2().Deployments("default").Create(d)
 		if err != nil {
 			t.Error(err)
 			t.Fatal("error creating deployment")
@@ -187,7 +187,7 @@ func TestDeploymentMinikubeE2E(t *testing.T) {
 	}
 
 	// Create Minikube Deployment
-	d, err = clientset.Extensions().Deployments("default").Create(d)
+	d, err = clientset.AppsV1beta2().Deployments("default").Create(d)
 	if err != nil {
 		t.Error(err)
 		t.Fatal("error creating deployment")
@@ -195,7 +195,7 @@ func TestDeploymentMinikubeE2E(t *testing.T) {
 	time.Sleep(1 * time.Second) // give some time for the API
 
 	// Verify Deployment exists
-	ds, err := clientset.Extensions().Deployments("default").List(metav1.ListOptions{LabelSelector: "app=api"})
+	ds, err := clientset.AppsV1beta2().Deployments("default").List(metav1.ListOptions{LabelSelector: "app=api"})
 	if err != nil {
 		t.Error(err)
 	}
@@ -217,7 +217,7 @@ func TestDeploymentMinikubeE2E(t *testing.T) {
 	*/
 
 	// Delete Deployment
-	err = clientset.Extensions().Deployments("default").Delete(helloKubeconDeploymentName, nil)
+	err = clientset.AppsV1beta2().Deployments("default").Delete(helloKubeconDeploymentName, nil)
 	if err != nil {
 		t.Errorf("error deleting deployment: %v", err)
 	}

@@ -4,7 +4,9 @@ import (
 	"fmt"
 
 	"k8s.io/api/core/v1"
-	apiextv1 "k8s.io/api/extensions/v1beta1"
+	//apiv1b2 "k8s.io/api/extensions/v1beta1"
+	apiv1b2 "k8s.io/api/apps/v1beta2"
+
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -33,18 +35,20 @@ func kubeconContainer(name, image, tag string) v1.Container {
 		Name:            name,
 		Image:           fmt.Sprintf("%s:%s", image, tag),
 		ImagePullPolicy: "Always",
+		Resources: v1.ResourceRequirements{
+			Limits:   v1.ResourceList{"cpu": cpuQuantity(0.5)},
+			Requests: v1.ResourceList{"cpu": cpuQuantity(0.2)},
+		},
 	}
 }
 
 // kubeconDeployment creates the Deployment Object structure or returns
 // error if parameters are unspecified.
-func kubeconDeployment(image, tag string) (*apiextv1.Deployment, error) {
+func kubeconDeployment(image, tag string) (*apiv1b2.Deployment, error) {
 	om := webappMeta(helloKubeconDeploymentName, "api")
-
 	if tag == "" || image == "" {
 		return nil, fmt.Errorf("error: image and tag must be defined")
 	}
-
 	pts := &v1.PodTemplateSpec{
 		ObjectMeta: om,
 		Spec: v1.PodSpec{
@@ -53,13 +57,14 @@ func kubeconDeployment(image, tag string) (*apiextv1.Deployment, error) {
 			},
 		},
 	}
-
-	d := &apiextv1.Deployment{
+	d := &apiv1b2.Deployment{
 		ObjectMeta: om,
-		Spec: apiextv1.DeploymentSpec{
+		Spec: apiv1b2.DeploymentSpec{
+			Selector: &metav1.LabelSelector{
+				MatchLabels: om.Labels,
+			},
 			Template: *pts,
 		},
 	}
-
 	return d, nil
 }
