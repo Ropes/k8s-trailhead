@@ -3,13 +3,15 @@ package kubernetes
 import (
 	"fmt"
 
-	apiextv2 "k8s.io/api/autoscaling/v2beta1"
 	"k8s.io/api/core/v1"
 	apiextv1 "k8s.io/api/extensions/v1beta1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+const helloKubeconDeploymentName = "hellokubecon"
+
+// webappMeta defines ObjectMeta(data) for webapp objects...
 func webappMeta(name, app string) metav1.ObjectMeta {
 	return metav1.ObjectMeta{
 		Name:   name,
@@ -26,13 +28,18 @@ func cpuQuantity(cpu float64) resource.Quantity {
 	return resource.MustParse(q)
 }
 
-func kubeconContainers(name, image string) v1.Container { return v1.Container{} }
+func kubeconContainer(name, image, tag string) v1.Container {
+	return v1.Container{
+		Name:            name,
+		Image:           fmt.Sprintf("%s:%s", image, tag),
+		ImagePullPolicy: "Always",
+	}
+}
 
-func kubeconDeployment(image, tag string, replicas int) (*apiextv1.Deployment, error) {
-	name := "hellokubecon"
-	om := webappMeta(name, "api")
-
-	_ = apiextv2.HorizontalPodAutoscaler{}
+// kubeconDeployment creates the Deployment Object structure or returns
+// error if parameters are unspecified.
+func kubeconDeployment(image, tag string) (*apiextv1.Deployment, error) {
+	om := webappMeta(helloKubeconDeploymentName, "api")
 
 	if tag == "" || image == "" {
 		return nil, fmt.Errorf("error: image and tag must be defined")
@@ -42,27 +49,17 @@ func kubeconDeployment(image, tag string, replicas int) (*apiextv1.Deployment, e
 		ObjectMeta: om,
 		Spec: v1.PodSpec{
 			Containers: []v1.Container{
-				v1.Container{
-					Name:            name,
-					Image:           fmt.Sprintf("%s:%s", image, tag),
-					ImagePullPolicy: "Always",
-				},
+				kubeconContainer(helloKubeconDeploymentName, image, tag),
 			},
 		},
 	}
 
-	r := int32(replicas)
 	d := &apiextv1.Deployment{
 		ObjectMeta: om,
 		Spec: apiextv1.DeploymentSpec{
 			Template: *pts,
-			Replicas: &r,
 		},
 	}
 
 	return d, nil
-}
-
-func kubeconAutoscaller(image, tag, cpuLimit int) (*apiextv2.HorizontalPodAutoscaler, error) {
-	return nil, nil
 }

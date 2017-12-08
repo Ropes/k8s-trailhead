@@ -2,7 +2,13 @@ package kubernetes
 
 import (
 	"fmt"
+	"os"
 	"testing"
+	"time"
+
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/tools/clientcmd"
 )
 
 func TestHelloKubecon(t *testing.T) {
@@ -17,28 +23,24 @@ func TestHelloKubecon(t *testing.T) {
 			namespace: "default",
 			image:     "kubecon",
 			tag:       "",
-			replicas:  3,
 			err:       true,
 		},
 		{
 			namespace: "default",
 			image:     "kubecon",
 			tag:       "0.1",
-			replicas:  3,
 			err:       false,
 		},
 		{
 			namespace: "kubecon",
 			image:     "",
 			tag:       "0.1",
-			replicas:  3,
 			err:       true,
 		},
 		{
 			namespace: "kubecon",
 			image:     "hihi",
 			tag:       "0.1",
-			replicas:  3,
 			err:       false,
 		},
 	}
@@ -46,7 +48,7 @@ func TestHelloKubecon(t *testing.T) {
 	for i, T := range tests {
 		t.Run(fmt.Sprintf("hello-deployment-test-%d", i), func(t *testing.T) {
 
-			d, err := kubeconDeployment(T.image, T.tag, T.replicas)
+			d, err := kubeconDeployment(T.image, T.tag)
 			t.Logf("%#v", T)
 			if T.err && err == nil {
 				t.Errorf("an error was expected for: %#v", T)
@@ -56,11 +58,6 @@ func TestHelloKubecon(t *testing.T) {
 				t.Errorf("Deployment expected nil")
 			}
 			if T.err == false {
-				exp := int32(T.replicas)
-				reps := d.Spec.Replicas
-				if !T.err && err != nil && *reps != exp {
-					t.Errorf("replica value unexpected: %#v", d.Spec)
-				}
 			}
 		})
 	}
@@ -94,5 +91,70 @@ func TestQuantity(t *testing.T) {
 			}
 
 		})
+	}
+}
+
+func TestDeploymentMinikubeE2E(t *testing.T) {
+	// TestMini
+	if _, ok := os.LookupEnv("TESTMINIKUBE"); !ok {
+		t.Skip("TESTMINIKUBE unset")
+	}
+	// Create Deployment
+	d, err := kubeconDeployment("localhost", "5000")
+	if err != nil || d == nil {
+		t.Error(err)
+		t.Logf("%#v", d)
+	}
+
+	kcp := os.Getenv("HOME") + "/.kube/config"
+	// TODO: Create client to to minikube
+	config, err := clientcmd.NewNonInteractiveDeferredLoadingClientConfig(
+		&clientcmd.ClientConfigLoadingRules{ExplicitPath: kcp},
+		&clientcmd.ConfigOverrides{CurrentContext: "minikube"},
+	).ClientConfig()
+	if err != nil {
+		t.Fatal("error reading config %#v: %v", config, err)
+	}
+
+	// creates the clientset
+	clientset, err := kubernetes.NewForConfig(config)
+	if err != nil {
+		t.Fatal("error creating client: %v", err)
+	}
+
+	// Create Minikube Deployment
+	d, err = clientset.Extensions().Deployments("default").Create(d)
+	if err != nil {
+		t.Error(err)
+		t.Fatal("error creating deployment")
+	}
+	time.Sleep(1 * time.Second) // give some time for the API
+
+	// Verify Deployment exists
+	ds, err := clientset.Extensions().Deployments("default").List(metav1.ListOptions{LabelSelector: "app=api"})
+	if err != nil {
+		t.Error(err)
+	}
+	if len(ds.Items) < 1 {
+		t.Errorf("error: deployments should not be 0")
+	}
+	t.Logf("%#v", ds.Items[0])
+	time.Sleep(1 * time.Second) // give some time for the API
+
+	/*
+		// Assert services
+		svc, err := clientset.Core().Services("default").List(metav1.ListOptions{})
+		if err != nil {
+			t.Errorf("svc get err: %v", err)
+		}
+		if len(svc.Items) < 1 {
+			t.Errorf("at least one service expected")
+		}
+	*/
+
+	// Delete Deployment
+	err = clientset.Extensions().Deployments("default").Delete(helloKubeconDeploymentName, nil)
+	if err != nil {
+		t.Errorf("error deleting deployment: %v", err)
 	}
 }
