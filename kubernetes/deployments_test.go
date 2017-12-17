@@ -158,6 +158,30 @@ func TestDeploymentCreateUpdateNoCleanup(t *testing.T) {
 	t.Logf("Deployment \n%#v", d)
 }
 
+func testClientset(t *testing.T) *kubernetes.Clientset {
+	// Test Minikube  Deployment
+	if _, ok := os.LookupEnv("TESTMINIKUBE"); !ok {
+		t.Skip("TESTMINIKUBE unset")
+	}
+	kcp := os.Getenv("HOME") + "/.kube/config"
+	// Create client to to minikube
+	config, err := clientcmd.NewNonInteractiveDeferredLoadingClientConfig(
+		&clientcmd.ClientConfigLoadingRules{ExplicitPath: kcp},
+		&clientcmd.ConfigOverrides{CurrentContext: "minikube"},
+	).ClientConfig()
+	if err != nil {
+		t.Fatal("error reading config %#v: %v", config, err)
+	}
+
+	// creates the clientset
+	clientset, err := kubernetes.NewForConfig(config)
+	if err != nil {
+		t.Fatal("error creating client: %v", err)
+	}
+	t.Logf("clientset created")
+	return clientset
+}
+
 func TestDeploymentMinikubeE2E(t *testing.T) {
 	// Test Minikube  Deployment
 	if _, ok := os.LookupEnv("TESTMINIKUBE"); !ok {
