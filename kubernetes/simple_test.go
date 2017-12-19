@@ -61,7 +61,7 @@ func TestSimpleDeployE2E(t *testing.T) {
 	}
 	t.Logf("deployment exists!")
 
-	// Delete Deployment
+	// Cleanup/Delete Deployment
 	err = clientset.AppsV1beta2().Deployments("default").Delete(deploymentName, nil)
 	if err != nil {
 		t.Errorf("error deleting deployment: %v", err)

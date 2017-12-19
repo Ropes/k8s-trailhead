@@ -30,4 +30,13 @@ The `Gopkg.toml` locks client-go to `v5.0.1` and Kubernetes libraries to `kubern
 
 ### End to End Testing
 
-TODO
+This runs a full integration test of a nginx(or whatever image you like) Deployment being created, tested for operation, and then cleanup. No bash, pipes, kubectl, or YAML involved!
+
+Requirements: 
+* [minikube](https://github.com/kubernetes/minikube) up and running.
+* `export TESTMINIKUBE=1` to enable integration test.
+
+Execute Simple E2E Test:
+
+`go test ./kubernetes/... -v -run TestSimpleDeployE2E`
+
