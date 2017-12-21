@@ -20,7 +20,7 @@ This project chooses to use [dep](https://github.com/golang/dep) as the dependen
 
 For the mainline features, starting with the `Gopkg.toml` should work, copy it into other projects as a starting point. Once you've started writing yourown project, `dep ensure` to get the required packages vendored. `dep` is working on the [issue](https://github.com/golang/dep/issues/1124), although it's a [transitive dependency](https://github.com/golang/dep/issues/1124#issuecomment-333457621) issue, which is very [complex](https://github.com/golang/dep/issues/1124#issuecomment-331346439).
 
-The `Gopkg.toml` locks client-go to `v5.0.1` and Kubernetes libraries to `kubernetes-1.8.2`. If you encounter any issues, please report them here and I'll try to resolve them and provide feedback upstream to `dep` if it's additional information.
+The `Gopkg.toml` locks client-go to `v6.0.0` and Kubernetes libraries to `kubernetes-1.9.0`. If you encounter any issues, please report them here and I'll try to resolve them and provide feedback upstream to `dep` if it's additional information.
 
 ## Showcase
 
