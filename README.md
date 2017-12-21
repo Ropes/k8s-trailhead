@@ -40,3 +40,11 @@ Execute Simple E2E Test:
 
 `go test ./kubernetes/... -v -run TestSimpleDeployE2E`
 
+## Trailmap(TODO)
+
+### Operators
+
+Work through a simple case of [CoreOS's Operator](https://coreos.com/operators/) pattern:
+1. Observe
+2. Analyze
+3. Act
