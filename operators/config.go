@@ -5,5 +5,6 @@ const SimpleConfigMapName = "simple"
 
 // SimpleConfig is the data written to the
 type SimpleConfig struct {
-	Size int `json:"size"`
+	Replicas int    `json:"size"`
+	Image    string `json:"image"`
 }

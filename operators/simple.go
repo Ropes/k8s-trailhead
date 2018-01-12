@@ -2,6 +2,7 @@ package operators
 
 import (
 	"context"
+	"fmt"
 	"strconv"
 	"time"
 
@@ -18,7 +19,7 @@ type SimpleOperator struct {
 	errors    chan error
 	namespace string
 
-	observed *SimpleCmpArtifact
+	observed *SimpleConfig
 	expected *SimpleCmpArtifact
 }
 
@@ -28,6 +29,7 @@ func NewSimpleOperator(ctx context.Context, kclient kubernetes.Interface) *Simpl
 		ctx:       ctx,
 		kclient:   kclient,
 		namespace: "default",
+		errors:    make(chan error, 2),
 	}
 }
 
@@ -68,10 +70,18 @@ func (o *SimpleOperator) Observe() {
 			o.errors <- err
 			return
 		}
-		s := &SimpleConfig{
-			Size: sz,
+		img, ok := d["image"]
+		if !ok {
+			o.errors <- fmt.Errorf("error reading image from config")
+			return
 		}
+		s := &SimpleConfig{
+			Replicas: sz,
+			Image:    img,
+		}
+		o.observed = s
 	}
+
 }
 
 func (o *SimpleOperator) Analyze() {
