@@ -10,7 +10,7 @@ import (
 	"k8s.io/client-go/kubernetes"
 )
 
-type SimpleCmpArtifact SimpleConfig
+type SimpleCmpArtifact *SimpleSpec
 
 // SimpleOperator implements the Operator interface for a Kubernetes Namespace.
 type SimpleOperator struct {
@@ -19,7 +19,7 @@ type SimpleOperator struct {
 	errors    chan error
 	namespace string
 
-	observed *SimpleConfig
+	observed *SimpleSpec
 	expected *SimpleCmpArtifact
 }
 
@@ -75,7 +75,7 @@ func (o *SimpleOperator) Observe() {
 			o.errors <- fmt.Errorf("error reading image from config")
 			return
 		}
-		s := &SimpleConfig{
+		s := &SimpleSpec{
 			Replicas: sz,
 			Image:    img,
 		}
