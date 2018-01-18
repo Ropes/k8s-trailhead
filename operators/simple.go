@@ -10,7 +10,7 @@ import (
 	"k8s.io/client-go/kubernetes"
 )
 
-type SimpleCmpArtifact *SimpleSpec
+const simpleConfigMapName = "simplespec"
 
 // SimpleOperator implements the Operator interface for a Kubernetes Namespace.
 type SimpleOperator struct {
@@ -19,8 +19,8 @@ type SimpleOperator struct {
 	errors    chan error
 	namespace string
 
-	observed *SimpleSpec
-	expected *SimpleCmpArtifact
+	spec   *SimpleSpec
+	status *SimpleSpec
 }
 
 // NewSimpleOperator creates an Operator with context controlled exit.
@@ -49,13 +49,14 @@ func (o *SimpleOperator) Run() {
 
 }
 
+// Observe reads necessary APIs for data related to Spec and Status of {Simple} and writes data for analysis.
 func (o *SimpleOperator) Observe() {
 	select {
 	case <-o.ctx.Done():
 		return
 	default:
 		//TODO: Query ConfigMap
-		cm, err := o.kclient.Core().ConfigMaps(o.namespace).Get("simpleoperator", meta_v1.GetOptions{})
+		cm, err := o.kclient.Core().ConfigMaps(o.namespace).Get(simpleConfigMapName, meta_v1.GetOptions{})
 		if err != nil {
 			o.errors <- err
 			return
@@ -79,11 +80,12 @@ func (o *SimpleOperator) Observe() {
 			Replicas: sz,
 			Image:    img,
 		}
-		o.observed = s
+		o.spec = s
 	}
 
 }
 
+// Analyze interprets the Observe()'d data and determines necesary changes to Act() upon.
 func (o *SimpleOperator) Analyze() {
 	select {
 	case <-o.ctx.Done():
